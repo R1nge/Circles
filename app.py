@@ -3,19 +3,37 @@ import cv2
 import numpy as np
 from streamlit_webrtc import webrtc_streamer
 import math
+from pyngrok import ngrok
+import os
 
-st.set_page_config(page_title="Target Roundness Detector", layout="wide")
+# Page Config
+st.set_page_config(page_title="Local Bridge Roundness Detector", layout="wide")
 
+# --- Ngrok Tunnel Management ---
+st.sidebar.header("🌐 Public Access (Ngrok)")
+ngrok_token = st.sidebar.text_input("Enter Ngrok Authtoken", type="password")
+start_tunnel = st.sidebar.button("Start Public Tunnel")
+
+if start_tunnel:
+    if ngrok_token:
+        # Set the authtoken
+        ngrok.set_auth_token(ngrok_token)
+        # Create tunnel to the port Streamlit uses (8501)
+        try:
+            # We kill existing tunnels first to avoid "port already in use" errors
+            ngrok.kill() 
+            tunnel = ngrok.connect(8501)
+            st.sidebar.success(f"Public URL: {tunnel.public_url}")
+            st.info("Anyone can now open this URL to see your camera feed.")
+        except Exception as e:
+            st.sidebar.error(f"Error starting tunnel: {e}")
+    else:
+        st.sidebar.warning("Please enter your Ngrok Authtoken first!")
+
+# --- Rest of your Roundness Logic ---
 st.title("🎯 Target Roundness Detector")
-st.markdown("""
-This app uses your camera to detect the roundness of a target. 
-**Instructions:** 
-1. Allow camera access. 
-2. Point the camera at the target. 
-3. Use the sliders on the left to adjust for your specific lighting/camera.
-""")
+st.markdown("This app is running locally on your machine and being proxied via Ngrok.")
 
-# --- Sidebar Controls ---
 st.sidebar.header("Image Processing")
 blur_size = st.sidebar.slider("Blur (Smoothness)", 3, 21, 5, step=2)
 canny_low = st.sidebar.slider("Canny Low", 0, 255, 50)
@@ -72,15 +90,10 @@ def video_transformer(frame):
 
     return img, frame.to_ndarray(format="bgr24")
 
-# --- WebRTC Streamer with Google STUN ---
+# --- WebRTC Streamer (Local / No TURN needed) ---
 webrtc_streamer(
     key="target_detection",
     video_transformer_factory=lambda: video_transformer,
-    rtc_configuration={
-        "iceServers": [
-            {"urls": ["stun:stun.l.google.com:19302"]}
-        ]
-    }
 )
 
-st.info("Note: If the camera doesn't start, your network might be blocking the direct connection. This happens on many corporate/school Wi-Fi networks.")
+st.info("Local Mode: Your camera data is being processed on your CPU and streamed through the Ngrok tunnel.")
