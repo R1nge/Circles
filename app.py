@@ -2,13 +2,19 @@ import streamlit as st
 import cv2
 import numpy as np
 from streamlit_webrtc import webrtc_streamer
-from PIL import Image
 import math
 
-st.set_page_config(page_title="Live Roundness Detector", layout="wide")
+# Page Config
+st.set_page_config(page_title="Target Roundness Detector", layout="wide")
 
-st.title("🎯 Live Target Roundness Detector")
-st.write("Point your camera at the target. Adjust sliders to optimize for your lighting.")
+st.title("🎯 Target Roundness Detector")
+st.markdown("""
+This app uses your camera to detect the roundness of a target. 
+**Instructions:** 
+1. Allow camera access. 
+2. Point the camera at the target. 
+3. Use the sliders on the left to adjust for your specific lighting/camera.
+""")
 
 # --- Sidebar Controls ---
 st.sidebar.header("Image Processing")
@@ -26,10 +32,11 @@ def calculate_roundness(contour):
     area = cv2.contourArea(contour)
     perimeter = cv2.arcLength(contour, True)
     if perimeter == 0: return 0
+    # Formula: (4 * pi * Area) / (Perimeter^2)
     return (4 * math.pi * area) / (perimeter ** 2)
 
 def video_transformer(frame):
-    # Convert the frame to BGR (WebRTC sends RGB)
+    # Convert the frame to BGR
     img = frame.to_ndarray(format="bgr24")
     
     # Pre-processing
@@ -76,7 +83,7 @@ def video_transformer(frame):
     return img, frame.to_ndarray(format="bgr24")
 
 # --- WebRTC Streamer ---
-# This handles the connection between the browser's camera and the Python code
+# This is the "Proxy" that allows the camera to talk to your Python code
 webrtc_streamer(
     key="target_detection",
     video_transformer_factory=lambda: video_transformer,
@@ -97,4 +104,4 @@ webrtc_streamer(
     }
 )
 
-st.info("Instructions: 1. Allow camera access. 2. Adjust sliders until the circles highlight the target correctly.")
+st.info("Tip: If the screen is blank, ensure you have granted camera permissions to the browser.")
