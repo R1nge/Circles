@@ -80,7 +80,21 @@ def video_transformer(frame):
 webrtc_streamer(
     key="target_detection",
     video_transformer_factory=lambda: video_transformer,
-    rtc_configuration={"iceServers": [{"urls": ["stun:stun.l.google.com:19302"]}]}
+    rtc_configuration={
+        "iceServers": [
+            {"urls": ["stun:stun.l.google.com:19302"]},
+            {
+                "urls": [
+                    "turn:aws-global-1.c.rstream.io:3478?transport=udp",
+                    "turn:aws-global-1.c.rstream.io:3478?transport=tcp",
+                    "turns:aws-global-1.c.rstream.io:5349?transport=udp",
+                    "turns:aws-global-1.c.rstream.io:5349?transport=tcp"
+                ],
+                "username": "v1:1793915663:api:-:d1bd807d95566e63a85d9e84",
+                "credential": "4Ndu5Vw+vvD7vxTAuJDngOaHHG425prH86JtNb6Ydck="
+            }
+        ]
+    }
 )
 
 st.info("Instructions: 1. Allow camera access. 2. Adjust sliders until the circles highlight the target correctly.")
